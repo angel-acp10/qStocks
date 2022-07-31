@@ -1,0 +1,61 @@
+#include "transactions.h"
+#include "ui_transactions.h"
+#include "transactionsdelegate.h"
+#include "transactionscolumns.h"
+
+Transactions::Transactions(QWidget *parent, DataBase *db) :
+    QWidget(parent),
+    ui(new Ui::Transactions)
+{
+    ui->setupUi(this);
+    this->db = db;
+    if( !this->db->existsTransactionsTable() )
+        this->db->createTransactionsTable();
+
+    // model
+    QSqlDatabase database = QSqlDatabase::database();
+    model = new QSqlTableModel(this, database);
+    model->setTable("transactions");
+    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    model->select();
+
+    // proxy model
+    trProxyModel = new TransactionsProxyModel();
+    trProxyModel->setSourceModel(model);
+    ui->transactions_tableView->setModel(trProxyModel);
+
+    // hidden columns
+    QList<transactionsColumns_t> hiddenColumns ({
+        COL_Isin, COL_Market, COL_LocalValue, COL_LocalCurrency,
+        COL_Currency, COL_ExchangeRate, COL_Value, COL_Commissions,
+    });
+    for(auto col : hiddenColumns)
+        ui->transactions_tableView->setColumnHidden(col, true);
+
+    // other properties
+    ui->transactions_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->transactions_tableView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->transactions_tableView->verticalHeader()->setVisible(false);
+    ui->transactions_tableView->setSortingEnabled(true);
+    ui->transactions_tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->transactions_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    ui->transactions_tableView->show();
+
+    // signals
+    connect(ui->importCsv_pushButton, SIGNAL(clicked()), this, SLOT(onClicked_importCsv()));
+}
+
+Transactions::~Transactions()
+{
+    delete ui;
+    delete import_d;
+}
+
+void Transactions::onClicked_importCsv(void)
+{
+    import_d = new ImportCsvDialog(this, db);
+    import_d->open();
+}
+
+
