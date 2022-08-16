@@ -23,7 +23,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     mainMenuItem_t items[] = {
         {"Transactions",        transactions_w, [this](){return new Transactions(this, db);} },
-        {"Purchases & sales",   purchSales_w,   [this](){return new PurchSales(this, db);} },
         {"Portfolio",           portfolio_w,    [this](){return new Portfolio(this, db);} },
         {"", NULL, NULL} // end of array
     };

@@ -14,9 +14,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     portfolio.cpp \
-    purchsales.cpp \
     transactions.cpp \
-    transactionsdelegate.cpp \
     transactionsproxymodel.cpp
 
 HEADERS += \
@@ -24,17 +22,14 @@ HEADERS += \
     importcsvdialog.h \
     mainwindow.h \
     portfolio.h \
-    purchsales.h \
     transactions.h \
     transactionscolumns.h \
-    transactionsdelegate.h \
     transactionsproxymodel.h
 
 FORMS += \
     importcsvdialog.ui \
     mainwindow.ui \
     portfolio.ui \
-    purchsales.ui \
     transactions.ui
 
 # Default rules for deployment.

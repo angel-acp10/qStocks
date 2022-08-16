@@ -19,29 +19,15 @@ QVariant TransactionsProxyModel::data(const QModelIndex &index, int role) const
             QDateTime date = QDateTime(value.toDateTime());
             return date.toString("dd/MM/yyyy HH:mm");
         }
-        else if (index.column() == COL_LocalUnitPrice)
-        {
-            const double locUtPrice = value.toDouble();
-            const QString locCurrency = index.siblingAtColumn(COL_LocalCurrency).data(role).toString();
-            QString formated = QString("%1  %2  ").arg(locUtPrice).arg(locCurrency);
-            return formated;
-        }
-        else if (index.column() == COL_Total) {
-            const double total = value.toDouble();
-            const QString currency = index.siblingAtColumn(COL_Currency).data(role).toString();
-            QString formated = QString("%1  %2  ").arg(total).arg(currency);
-            return formated;
-        }
     }
     else if(role == Qt::TextAlignmentRole)
     {
         switch(index.column())
         {
-        case COL_Product:
-        case COL_Isin:
+        case COL_Name:
             return Qt::AlignLeft;
-        case COL_LocalUnitPrice:
-        case COL_Total:
+        case COL_UnitPrice:
+        case COL_Value:
             return Qt::AlignRight;
         default:
             return Qt::AlignCenter;

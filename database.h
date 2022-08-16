@@ -3,32 +3,78 @@
 
 #include <QDateTime>
 #include <QtSql>
+#include <QMetaEnum>
+#include <QObject>
 
-class DataBase
+class DataBase : public QObject
 {
+    Q_OBJECT
 public:
     typedef struct{
-        QDateTime dateTime;
-        QString product;
+        QString id;
+        QString name;
         QString ticker;
-        QString isin;
-        QString market;
+    }security_t;
+
+    enum CurrencyType{
+        USD = 1,  EUR, JPY, GBP, AUD, CAD, CHF, CNY, HKD, NZD, SEK, KRW, SGD, NOK,
+        MXN, INR, RUB, ZAR, TRY, BRL, TWD, DKK, PLN, THB, IDR, HUF, CZK, ILS, CLP,
+        PHP, AED, COP, SAR, MYR, RON,
+    };
+    Q_ENUM(CurrencyType)
+    int max_currencyType = (int)RON;
+
+    typedef struct{
+        QDateTime dateTime;
+        security_t security;
         int qty;
         double locUnitPrice;
-        double locValue;
-        QString locCurrency;
-        QString currency;
+        enum CurrencyType locCurrency;
         double exchRate;
         double value;
         double commissions;
         double total;
+        enum CurrencyType currency;
     }transaction_t;
 
     DataBase(const QString & dbFile);
     ~DataBase();
-    bool existsTransactionsTable(void);
-    bool createTransactionsTable(void);
-    bool addTransaction(transaction_t &t);
+
+    bool open();
+    void close();
+
+    bool init();
+
+    // currencies table
+    bool currenciesTable_createIfNotExists();
+
+    // securities table
+    bool securitiesTable_createIfNotExists();
+    bool securitiesTable_addSecurity(security_t &s);
+
+    // transactions table
+    bool transactionsTable_createIfNotExists();
+    bool transactionsTable_addTransaction(transaction_t &t);
+
+    // transactions view
+    bool transactionsView_createIfNotExists();
+
+    // stock list table
+    /*
+    bool stockListTable_exists(void);
+    bool stockListTable_createIfNotExists(void);
+    bool stockListTable_update(void); // call to update stocks table
+    */
+
+    // stocks table
+    /*
+    bool existsStockPriceTable(QString isin);
+    bool createStockPriceTable(QString isin);
+    bool updateStockPriceTable(QString isin);
+    */
+
+    DataBase::CurrencyType getCurrencyEnum(const QString &text);
+    QString getCurrencyString(const DataBase::CurrencyType &enumValue);
 
 private:
     QString dbFile;

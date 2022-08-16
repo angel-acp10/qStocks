@@ -52,11 +52,21 @@ void ImportCsvDialog::onClicked_import(void)
 
 void ImportCsvDialog::importCsv_degiro(QString csvFile)
 {
+    QErrorMessage err = QErrorMessage(this);
     QFile f = QFile(csvFile);
+
     if (!f.open(QIODevice::ReadOnly))
     {
-        QErrorMessage err = QErrorMessage(this);
         err.showMessage(tr("File could not be opened."));
+        err.exec();
+        return;
+    }
+
+    if(!db->open())
+    {
+        f.close();
+        err.showMessage(tr("DataBase could not be opened."));
+        err.exec();
         return;
     }
 
@@ -67,21 +77,37 @@ void ImportCsvDialog::importCsv_degiro(QString csvFile)
         QDate date = QDate::fromString(row[0], "dd-MM-yyyy");
         QTime time = QTime::fromString(row[1], "HH:mm");
 
-        DataBase::transaction_t transaction = {
-            .dateTime = QDateTime(date, time),
-            .product = row[2],
-            .ticker = "",
-            .isin = row[3],
-            .market = row[4],
-            .qty = row[6].toInt(),
-            .locUnitPrice = row[7].toDouble(),
-            .locCurrency = row[8],
-            .currency = row[12],
-            .exchRate = row[13].toDouble(),
-            .commissions = row[14].toDouble(),
-        };
+        DataBase::transaction_t tr;
+        tr.dateTime = QDateTime(date, time);
+        tr.security.name = row[2];
+        tr.security.ticker = "";
+        tr.security.id = row[3];
+        tr.qty = row[6].toInt();
+        tr.locUnitPrice = row[7].toDouble();
+        double locValue = -tr.qty * tr.locUnitPrice;
+        tr.locCurrency = db->getCurrencyEnum(row[8]);
+        tr.exchRate = (row[13].toDouble()==0.0) ? 1 : row[13].toDouble();
+        tr.commissions = row[14].toDouble();
+        tr.value = locValue / tr.exchRate;
+        tr.total = tr.value + tr.commissions;
 
-        db->addTransaction(transaction);
+        tr.currency = db->getCurrencyEnum(row[12]);
+
+
+        if(!db->transactionsTable_addTransaction(tr))
+        {
+            f.close();
+            db->close();
+            QString message = QString("Error adding transaction with date:%1 and product:%2").arg(
+                        tr.dateTime.toString("dd-MM-yyyy HH:mm"),
+                        tr.security.name);
+            err.showMessage(message);
+            err.exec();
+            return;
+        }
     }
+    f.close();
+    db->close();
+    err.exec();
     return;
 }

@@ -5,7 +5,6 @@
 
 #include "database.h"
 #include "transactions.h"
-#include "purchsales.h"
 #include "portfolio.h"
 
 
@@ -25,7 +24,6 @@ private:
     Ui::MainWindow *ui;
 
     Transactions *transactions_w;
-    PurchSales *purchSales_w;
     Portfolio *portfolio_w;
 
     DataBase *db;

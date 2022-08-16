@@ -1,6 +1,5 @@
 #include "transactions.h"
 #include "ui_transactions.h"
-#include "transactionsdelegate.h"
 #include "transactionscolumns.h"
 
 Transactions::Transactions(QWidget *parent, DataBase *db) :
@@ -9,13 +8,12 @@ Transactions::Transactions(QWidget *parent, DataBase *db) :
 {
     ui->setupUi(this);
     this->db = db;
-    if( !this->db->existsTransactionsTable() )
-        this->db->createTransactionsTable();
+    this->db->init();
 
     // model
     QSqlDatabase database = QSqlDatabase::database();
     model = new QSqlTableModel(this, database);
-    model->setTable("transactions");
+    model->setTable("VW_TRANSACTIONS");
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
     model->select();
 
@@ -26,8 +24,7 @@ Transactions::Transactions(QWidget *parent, DataBase *db) :
 
     // hidden columns
     QList<transactionsColumns_t> hiddenColumns ({
-        COL_Isin, COL_Market, COL_LocalValue, COL_LocalCurrency,
-        COL_Currency, COL_ExchangeRate, COL_Value, COL_Commissions,
+        COL_Isin,
     });
     for(auto col : hiddenColumns)
         ui->transactions_tableView->setColumnHidden(col, true);
