@@ -11,6 +11,15 @@ class DataBase : public QObject
     Q_OBJECT
 public:
     typedef struct{
+        QString name;
+        bool canBeNull;
+        int value;
+        int minValue;
+        int maxValue;
+        QString description;
+    }setting_t;
+
+    typedef struct{
         QString id;
         QString name;
         QString ticker;
@@ -44,6 +53,9 @@ public:
     void close();
 
     bool init();
+
+    // settings table
+    bool settingsTable_createIfNotExists();
 
     // currencies table
     bool currenciesTable_createIfNotExists();

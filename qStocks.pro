@@ -1,4 +1,4 @@
-QT       += core gui sql
+QT       += core gui sql network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -14,22 +14,27 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     portfolio.cpp \
+    settingsdialog.cpp \
     transactions.cpp \
-    transactionsproxymodel.cpp
+    transactionsproxymodel.cpp \
+    yahooapi.cpp
 
 HEADERS += \
     database.h \
     importcsvdialog.h \
     mainwindow.h \
     portfolio.h \
+    settingsdialog.h \
     transactions.h \
     transactionscolumns.h \
-    transactionsproxymodel.h
+    transactionsproxymodel.h \
+    yahooapi.h
 
 FORMS += \
     importcsvdialog.ui \
     mainwindow.ui \
     portfolio.ui \
+    settingsdialog.ui \
     transactions.ui
 
 # Default rules for deployment.

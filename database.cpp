@@ -23,8 +23,9 @@ bool DataBase::init(void)
 
     if(!currenciesTable_createIfNotExists())    return false;
     if(!securitiesTable_createIfNotExists())    return false;
+    if(!settingsTable_createIfNotExists())      return false;
     if(!transactionsTable_createIfNotExists())  return false;
-    if(!transactionsView_createIfNotExists())  return false;
+    if(!transactionsView_createIfNotExists())   return false;
 
     return true;
 }
@@ -48,6 +49,76 @@ void DataBase::close(void)
     QSqlDatabase db = QSqlDatabase::database();
     if( db.isOpen() )
         db.close();
+}
+
+bool DataBase::settingsTable_createIfNotExists()
+{
+    setting_t defSettings[] = {
+        {
+            .name = "DefCurrency",
+            .canBeNull = false,
+            .value = (int)USD,
+            .minValue = 0,
+            .maxValue = 0,
+            .description = "Default currency to be shown on graphs and tables, except on Transactions."
+        },
+        {
+            .name = "PrevMonths",
+            .canBeNull = false,
+            .value = 3,
+            .minValue = 0,
+            .maxValue = 12*3,
+            .description = "Months of equity price prior to first purchase."
+        },
+        { .name = "", .canBeNull = false, .value = 0, .minValue = 0, .maxValue = 0,.description = "" }, // end of table indicator
+    };
+
+    QString q;
+    QSqlQuery qry;
+
+    q = "CREATE TABLE IF NOT EXISTS Settings ("
+        "Name	VARCHAR(20) NOT NULL UNIQUE,"
+        "CanBeNull	INTEGER NOT NULL,"
+        "Value	INTEGER,"
+        "MinValue	INTEGER,"
+        "MaxValue	INTEGER,"
+        "Description	VARCHAR(100),"
+        "PRIMARY KEY(Name)"
+    ");";
+
+     if(!qry.exec(q))
+     {
+         qDebug()<<"DB error: creating 'Settings' table";
+         return false;
+     }
+
+     q = "INSERT or REPLACE INTO Settings ("
+         "Name,"
+         "CanBeNull,"
+         "Value,"
+         "MinValue,"
+         "MaxValue,"
+         "Description)"
+     "VALUES (?, ?, ?, ?, ?, ?);";
+
+     for(int i=0; defSettings[i].name != ""; i++)
+     {
+         qry.prepare(q);
+         qry.addBindValue( defSettings[i].name ); // name
+         if(defSettings[i].canBeNull)   qry.addBindValue( 1 ); // canBeNull
+         else                           qry.addBindValue( 0 ); // canBeNull
+         qry.addBindValue( defSettings[i].value ); // value
+         qry.addBindValue( defSettings[i].minValue ); // minValue
+         qry.addBindValue( defSettings[i].maxValue ); // maxValue
+         qry.addBindValue( defSettings[i].description ); // description
+         if(!qry.exec())
+         {
+             qDebug()<<"DB error: filling 'Settings' table";
+             return false;
+         }
+     }
+
+     return true;
 }
 
 bool DataBase::currenciesTable_createIfNotExists()

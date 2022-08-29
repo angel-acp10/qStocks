@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 #include "database.h"
+#include "settingsdialog.h"
 #include "transactions.h"
 #include "portfolio.h"
 
@@ -20,8 +21,13 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void on_actionOptions_triggered();
+
 private:
     Ui::MainWindow *ui;
+
+    SettingsDialog *settings_d;
 
     Transactions *transactions_w;
     Portfolio *portfolio_w;

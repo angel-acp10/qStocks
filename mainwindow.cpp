@@ -50,3 +50,10 @@ MainWindow::~MainWindow()
     delete db;
 }
 
+
+void MainWindow::on_actionOptions_triggered()
+{
+    settings_d = new SettingsDialog(this);
+    settings_d->exec();
+}
+
