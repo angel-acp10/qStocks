@@ -1,6 +1,6 @@
 #include "transactionsproxymodel.h"
 
-#include "transactionscolumns.h"
+#include "columns.h"
 #include <QDateTime>
 #include <QColor>
 
@@ -14,7 +14,7 @@ QVariant TransactionsProxyModel::data(const QModelIndex &index, int role) const
 
     if(role == Qt::DisplayRole)
     {
-        if(index.column() == COL_DateTime)
+        if(index.column() == COL_TR_DateTime)
         {
             QDateTime date;
             date.setSecsSinceEpoch(value.toInt());
@@ -25,12 +25,12 @@ QVariant TransactionsProxyModel::data(const QModelIndex &index, int role) const
     {
         switch(index.column())
         {
-        case COL_Name:
-        case COL_LocCurrency:
-        case COL_Currency:
+        case COL_TR_Name:
+        case COL_TR_LocCurrency:
+        case COL_TR_Currency:
             return Qt::AlignLeft;
-        case COL_UnitPrice:
-        case COL_Value:
+        case COL_TR_UnitPrice:
+        case COL_TR_Value:
             return Qt::AlignRight;
         default:
             return Qt::AlignCenter;
@@ -40,10 +40,10 @@ QVariant TransactionsProxyModel::data(const QModelIndex &index, int role) const
     {
         int qty;
 
-        if(index.column() == COL_Quantity)
+        if(index.column() == COL_TR_Quantity)
             qty = index.data().toDouble();
         else
-            qty = index.siblingAtColumn(COL_Quantity).data().toDouble();
+            qty = index.siblingAtColumn(COL_TR_Quantity).data().toDouble();
 
         if(qty>=0)  return QColor(143, 188, 143);  // buy - green
         else        return QColor(205, 92, 92); // sell - red

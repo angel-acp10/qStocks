@@ -358,11 +358,11 @@ bool DataBase::securitiesTable_init()
         "ID	INTEGER UNIQUE,"
         "Isin	VARCHAR(15) NOT NULL,"
         "Name	VARCHAR(60),"
-        "Ticker	VARCHAR(15),"
         "CurrencyID	INTEGER NOT NULL,"
-        "Notes	INTEGER,"
+        "Ticker	VARCHAR(15),"
         "ApiID	INTEGER,"
         "ApiTicker	VARCHAR(15),"
+        "Notes	INTEGER,"
         "FOREIGN KEY(CurrencyID) REFERENCES Currencies(ID),"
         "FOREIGN KEY(ApiID) REFERENCES Apis(ID),"
         "PRIMARY KEY(ID AUTOINCREMENT),"
@@ -386,21 +386,21 @@ bool DataBase::securitiesTable_addRecord(security_t &s)
     q = "INSERT INTO Securities ("
         "Isin,"
         "Name,"
-        "Ticker,"
         "CurrencyID,"
-        "Notes,"
+        "Ticker,"
         "ApiID,"
-        "ApiTicker)"
+        "ApiTicker,"
+        "Notes)"
     "VALUES (?, ?, ?, ?, ?, ?, ?);";
 
     qry.prepare(q);
     qry.addBindValue(s.isin);
     qry.addBindValue(s.name);
-    qry.addBindValue(s.ticker);
     qry.addBindValue(s.currency.id);
-    qry.addBindValue(s.notes);
+    qry.addBindValue(s.ticker);
     qry.addBindValue((int)s.apiId);
     qry.addBindValue(s.apiTicker);
+    qry.addBindValue(s.notes);
 
     if(!qry.exec())
     {

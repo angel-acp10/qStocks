@@ -1,6 +1,6 @@
 #include "transactions.h"
 #include "ui_transactions.h"
-#include "transactionscolumns.h"
+#include "columns.h"
 
 Transactions::Transactions(QWidget *parent, DataBase *db) :
     QWidget(parent),
@@ -24,7 +24,7 @@ Transactions::Transactions(QWidget *parent, DataBase *db) :
 
     // hidden columns
     QList<transactionsColumns_t> hiddenColumns ({
-        COL_Isin,
+        COL_TR_Isin,
     });
     for(auto col : hiddenColumns)
         ui->transactions_tableView->setColumnHidden(col, true);

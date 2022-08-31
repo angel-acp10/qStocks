@@ -57,3 +57,10 @@ void MainWindow::on_actionOptions_triggered()
     settings_d->exec();
 }
 
+
+void MainWindow::on_actionSecurities_configuration_triggered()
+{
+    securitiesConfig_d = new SecuritiesConfigDialog(this);
+    securitiesConfig_d->exec();
+}
+

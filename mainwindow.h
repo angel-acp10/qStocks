@@ -5,6 +5,7 @@
 
 #include "database.h"
 #include "settingsdialog.h"
+#include "securitiesconfigdialog.h"
 #include "transactions.h"
 #include "portfolio.h"
 
@@ -24,10 +25,13 @@ public:
 private slots:
     void on_actionOptions_triggered();
 
+    void on_actionSecurities_configuration_triggered();
+
 private:
     Ui::MainWindow *ui;
 
     SettingsDialog *settings_d;
+    SecuritiesConfigDialog *securitiesConfig_d;
 
     Transactions *transactions_w;
     Portfolio *portfolio_w;

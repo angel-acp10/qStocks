@@ -14,19 +14,21 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     portfolio.cpp \
+    securitiesconfigdialog.cpp \
     settingsdialog.cpp \
     transactions.cpp \
     transactionsproxymodel.cpp \
     yahooapi.cpp
 
 HEADERS += \
+    columns.h \
     database.h \
     importcsvdialog.h \
     mainwindow.h \
     portfolio.h \
+    securitiesconfigdialog.h \
     settingsdialog.h \
     transactions.h \
-    transactionscolumns.h \
     transactionsproxymodel.h \
     yahooapi.h
 
@@ -34,6 +36,7 @@ FORMS += \
     importcsvdialog.ui \
     mainwindow.ui \
     portfolio.ui \
+    securitiesconfigdialog.ui \
     settingsdialog.ui \
     transactions.ui
 

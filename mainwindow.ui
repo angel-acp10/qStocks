@@ -96,9 +96,10 @@
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
-     <string>Tools</string>
+     <string>Settings</string>
     </property>
     <addaction name="actionOptions"/>
+    <addaction name="actionSecurities_configuration"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -127,6 +128,11 @@
   <action name="actionOptions">
    <property name="text">
     <string>Options</string>
+   </property>
+  </action>
+  <action name="actionSecurities_configuration">
+   <property name="text">
+    <string>Securities configuration</string>
    </property>
   </action>
  </widget>
