@@ -10,6 +10,9 @@ class DataBase : public QObject
 {
     Q_OBJECT
 public:
+    ///////////
+    // Types
+    ///////////
     typedef struct{
         QString name;
         bool canBeNull;
@@ -19,32 +22,81 @@ public:
         QString description;
     }setting_t;
 
+    enum BrokerEnum{
+        BROKER_DEGIRO = 1,
+    };
+    Q_ENUM(BrokerEnum)
+    const int totalBrokers = 1;
+
+    enum ApiEnum{
+        API_YAHOO = 1,
+    };
+    Q_ENUM(ApiEnum)
+    const int totalApis = 1;
+
     typedef struct{
-        QString id;
+        int id;
+        QString name;
+        QColor color;
+        QString description;
+    }watchGroup_t;
+
+
+    typedef struct{
+        int id;
+        QString name;
+        enum ApiEnum apiId;
+        QString apiTicker;
+    }currency_t;
+
+    typedef struct{
+        int id;
+        QString isin;
         QString name;
         QString ticker;
+        currency_t currency;
+        QString notes;
+        enum ApiEnum apiId;
+        QString apiTicker;
     }security_t;
 
-    enum CurrencyType{
-        USD = 1,  EUR, JPY, GBP, AUD, CAD, CHF, CNY, HKD, NZD, SEK, KRW, SGD, NOK,
-        MXN, INR, RUB, ZAR, TRY, BRL, TWD, DKK, PLN, THB, IDR, HUF, CZK, ILS, CLP,
-        PHP, AED, COP, SAR, MYR, RON,
-    };
-    Q_ENUM(CurrencyType)
-    int max_currencyType = (int)RON;
+    typedef struct{
+        int id;
+        security_t security;
+        watchGroup_t watchGroup;
+    }watchItem_t;
 
     typedef struct{
-        QDateTime dateTime;
+        int id;
+        int timeStamp;
         security_t security;
-        int qty;
+        double qty;
         double locUnitPrice;
-        enum CurrencyType locCurrency;
         double exchRate;
         double value;
         double commissions;
-        double total;
-        enum CurrencyType currency;
+        currency_t currency;
+        enum BrokerEnum brokerId;
     }transaction_t;
+
+    typedef struct{
+        security_t security;
+        QVector<qint64> timeStamp;
+        QVector<double> open;
+        QVector<double> close;
+        QVector<double> high;
+        QVector<double> low;
+        QVector<double> volume;
+    }securityPrice_t;
+
+    typedef struct{
+        currency_t currency;
+        QVector<qint64> timeStamp;
+        QVector<double> open;
+        QVector<double> close;
+        QVector<double> high;
+        QVector<double> low;
+    }currencyPrice_t;
 
     DataBase(const QString & dbFile);
     ~DataBase();
@@ -54,42 +106,62 @@ public:
 
     bool init();
 
+    bool existsTable(QString table);
+    bool existsView(QString view);
+
     // settings table
-    bool settingsTable_createIfNotExists();
+    bool settingsTable_init();
+
+    // brokers table
+    bool brokersTable_init();
+
+    // APIs table
+    bool apisTable_init();
+
+    // watchGroups table
+    bool watchGroupsTable_init();
+    bool watchGroupsTable_addRecord(watchGroup_t &wg);
 
     // currencies table
-    bool currenciesTable_createIfNotExists();
+    bool currenciesTable_init();
+    bool currenciesTable_addRecord(currency_t &c);
+    int currenciesTable_getId(QString &name);
 
     // securities table
-    bool securitiesTable_createIfNotExists();
-    bool securitiesTable_addSecurity(security_t &s);
+    bool securitiesTable_init();
+    bool securitiesTable_addRecord(security_t &s);
+    int securitiesTable_getId(QString &isin, int currencyId);
+
+    // watchLists table
+    bool watchListsTable_init();
+    bool watchListsTable_addRecord(watchItem_t wi);
 
     // transactions table
-    bool transactionsTable_createIfNotExists();
-    bool transactionsTable_addTransaction(transaction_t &t);
+    bool transactionsTable_init();
+    bool transactionsTable_addRecord(transaction_t &t);
+
+    // securityPrices
+    bool securityPricesTable_init();
+    bool securityPricesTable_addRecords(securityPrice_t &sp);
+
+    // currencyPrices
+    bool currencyPricesTable_init();
+    bool currencyPricesTable_addRecords(currencyPrice_t &cp);
 
     // transactions view
-    bool transactionsView_createIfNotExists();
+    bool transactionsView_init();
 
-    // stock list table
-    /*
-    bool stockListTable_exists(void);
-    bool stockListTable_createIfNotExists(void);
-    bool stockListTable_update(void); // call to update stocks table
-    */
+    DataBase::ApiEnum stringToApiEnum(const QString &text);
+    QString apiEnumToString(const DataBase::ApiEnum &enumValue);
 
-    // stocks table
-    /*
-    bool existsStockPriceTable(QString isin);
-    bool createStockPriceTable(QString isin);
-    bool updateStockPriceTable(QString isin);
-    */
+    DataBase::BrokerEnum stringToBrokerEnum(const QString &text);
+    QString brokerEnumToString(const DataBase::BrokerEnum &enumValue);
 
-    DataBase::CurrencyType getCurrencyEnum(const QString &text);
-    QString getCurrencyString(const DataBase::CurrencyType &enumValue);
 
 private:
     QString dbFile;
+
+    enum ApiEnum m_selectedApi;
 };
 
 #endif // DATABASE_H

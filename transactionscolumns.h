@@ -8,8 +8,10 @@ typedef enum{
     COL_Isin,
     COL_Quantity,
     COL_UnitPrice,
+    COL_LocCurrency,
     COL_ExchangeRate,
     COL_Value,
+    COL_Currency,
 }transactionsColumns_t;
 
 #endif // TRANSACTIONSCOLUMNS_H

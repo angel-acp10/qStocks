@@ -16,7 +16,8 @@ QVariant TransactionsProxyModel::data(const QModelIndex &index, int role) const
     {
         if(index.column() == COL_DateTime)
         {
-            QDateTime date = QDateTime(value.toDateTime());
+            QDateTime date;
+            date.setSecsSinceEpoch(value.toInt());
             return date.toString("dd/MM/yyyy HH:mm");
         }
     }
@@ -25,6 +26,8 @@ QVariant TransactionsProxyModel::data(const QModelIndex &index, int role) const
         switch(index.column())
         {
         case COL_Name:
+        case COL_LocCurrency:
+        case COL_Currency:
             return Qt::AlignLeft;
         case COL_UnitPrice:
         case COL_Value:
@@ -38,9 +41,9 @@ QVariant TransactionsProxyModel::data(const QModelIndex &index, int role) const
         int qty;
 
         if(index.column() == COL_Quantity)
-            qty = index.data().toInt();
+            qty = index.data().toDouble();
         else
-            qty = index.siblingAtColumn(COL_Quantity).data().toInt();
+            qty = index.siblingAtColumn(COL_Quantity).data().toDouble();
 
         if(qty>=0)  return QColor(143, 188, 143);  // buy - green
         else        return QColor(205, 92, 92); // sell - red

@@ -77,29 +77,45 @@ void ImportCsvDialog::importCsv_degiro(QString csvFile)
         QDate date = QDate::fromString(row[0], "dd-MM-yyyy");
         QTime time = QTime::fromString(row[1], "HH:mm");
 
+        // transaction_t
         DataBase::transaction_t tr;
-        tr.dateTime = QDateTime(date, time);
-        tr.security.name = row[2];
-        tr.security.ticker = "";
-        tr.security.id = row[3];
-        tr.qty = row[6].toInt();
+        tr.id = -1; // autoincrement
+        tr.timeStamp = QDateTime(date, time).toSecsSinceEpoch();
+        tr.qty = row[6].toDouble();
         tr.locUnitPrice = row[7].toDouble();
-        double locValue = -tr.qty * tr.locUnitPrice;
-        tr.locCurrency = db->getCurrencyEnum(row[8]);
         tr.exchRate = (row[13].toDouble()==0.0) ? 1 : row[13].toDouble();
-        tr.commissions = row[14].toDouble();
+        double locValue = -tr.qty * tr.locUnitPrice;
         tr.value = locValue / tr.exchRate;
-        tr.total = tr.value + tr.commissions;
+        tr.commissions = row[14].toDouble();
+        tr.brokerId = DataBase::BROKER_DEGIRO;
 
-        tr.currency = db->getCurrencyEnum(row[12]);
+        // security
+        tr.security.id = -1; // autoincrement
+        tr.security.isin = row[3];
+        tr.security.name = row[2];
+        tr.security.ticker = ""; // manually set by user
+        tr.security.notes = ""; // manually set by user
+        tr.security.apiId = DataBase::API_YAHOO;
+        tr.security.apiTicker = ""; // manually set by user
 
+        // security - currency
+        tr.security.currency.id = -1; // autoincrement
+        tr.security.currency.name = row[8].toUpper();
+        tr.security.currency.apiId = DataBase::API_YAHOO;
+        tr.security.currency.apiTicker = ""; // manually set by user
 
-        if(!db->transactionsTable_addTransaction(tr))
+        // currency (used by user)
+        tr.currency.id = -1; // autoincrement
+        tr.currency.name = row[12].toUpper();
+        tr.currency.apiId = DataBase::API_YAHOO;
+        tr.currency.apiTicker = ""; // manually set by user
+
+        if(!db->transactionsTable_addRecord(tr))
         {
             f.close();
             db->close();
             QString message = QString("Error adding transaction with date:%1 and product:%2").arg(
-                        tr.dateTime.toString("dd-MM-yyyy HH:mm"),
+                        QDateTime(date, time).toString("dd-MM-yyyy HH:mm"),
                         tr.security.name);
             err.showMessage(message);
             err.exec();
