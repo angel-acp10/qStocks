@@ -64,7 +64,7 @@ void YahooApi::decodeResponse_SearchTicker(const QByteArray answer)
     if(!jsonDoc.isObject())
         return;
 
-    QStringList results;
+    QStringList exchanges, names, types, tickers;
 
     // reads quotes
     QJsonArray quotes = jsonDoc.object().take("quotes").toArray();
@@ -72,11 +72,19 @@ void YahooApi::decodeResponse_SearchTicker(const QByteArray answer)
     while(quotes_iterator != quotes.constEnd())
     {
         QJsonObject quote = quotes_iterator->toObject();
+
+        QString exchange = quote.take("exchange").toString();
+        QString name = quote.take("shortname").toString();
+        QString type = quote.take("quoteType").toString();
         QString ticker = quote.take("symbol").toString();
-        results.append(ticker);
+        exchanges.append(exchange);
+        tickers.append(ticker);
+        names.append(name);
+        types.append(type);
         quotes_iterator++;
     }
-    emit received_SearchTicker(results);
+
+    emit received_SearchTicker(exchanges, names, types, tickers);
 }
 
 

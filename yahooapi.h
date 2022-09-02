@@ -19,7 +19,10 @@ public slots:
     void GetDailyStockPrice(const QString &ticker, const QDateTime start, const QDateTime end);
 
 signals:
-    void received_SearchTicker(const QStringList &results);
+    void received_SearchTicker(const QStringList &exchanges,
+                                const QStringList &names,
+                                const QStringList &types,
+                                const QStringList &tickers );
     void received_GetDailyStockPrice(const QString &symbol,
                                      const QString &currency,
                                      const QVector<qint64> &unixTime,

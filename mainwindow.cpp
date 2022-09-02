@@ -60,7 +60,7 @@ void MainWindow::on_actionOptions_triggered()
 
 void MainWindow::on_actionSecurities_configuration_triggered()
 {
-    securitiesConfig_d = new SecuritiesConfigDialog(this);
+    securitiesConfig_d = new SecuritiesConfigDialog(this, db);
     securitiesConfig_d->exec();
 }
 
