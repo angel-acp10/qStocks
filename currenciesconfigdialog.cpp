@@ -1,10 +1,10 @@
-#include "securitiesconfigdialog.h"
-#include "ui_securitiesconfigdialog.h"
+#include "currenciesconfigdialog.h"
+#include "ui_currenciesconfigdialog.h"
 #include "columns.h"
 
-SecuritiesConfigDialog::SecuritiesConfigDialog(QWidget *parent, DataBase *db) :
+CurrenciesConfigDialog::CurrenciesConfigDialog(QWidget *parent, DataBase *db) :
     QDialog(parent),
-    ui(new Ui::SecuritiesConfigDialog)
+    ui(new Ui::CurrenciesConfigDialog)
 {
     ui->setupUi(this);
     this->db = db;
@@ -15,32 +15,30 @@ SecuritiesConfigDialog::SecuritiesConfigDialog(QWidget *parent, DataBase *db) :
     // model
     QSqlDatabase database = QSqlDatabase::database();
     model = new QSqlRelationalTableModel(this, database);
-    model->setTable("Securities");
-    model->setRelation(COL_SEC_CurrencyID, QSqlRelation("Currencies", "ID", "Name"));
-    model->setRelation(COL_SEC_ApiID, QSqlRelation("Apis", "ID", "Name"));
+    model->setTable("Currencies");
+    model->setRelation(COL_CUR_ApiID, QSqlRelation("Apis", "ID", "Name"));
     model->select();
-    ui->secList_tableView->setModel(model);
+    ui->curList_tableView->setModel(model);
 
     // hidden columns
-    QList<securitiesColumns_t> hiddenColumns ({
-        COL_SEC_ID,
-        COL_SEC_Notes
+    QList<currenciesColumns_t> hiddenColumns ({
+        COL_CUR_ID,
     });
     for(auto col : hiddenColumns)
-        ui->secList_tableView->setColumnHidden(col, true);
+        ui->curList_tableView->setColumnHidden(col, true);
 
     // other properties
-    ui->secList_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    ui->secList_tableView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    ui->secList_tableView->verticalHeader()->setVisible(false);
-    ui->secList_tableView->setSortingEnabled(true);
-    ui->secList_tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->secList_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->secList_tableView->show();
+    ui->curList_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->curList_tableView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->curList_tableView->verticalHeader()->setVisible(false);
+    ui->curList_tableView->setSortingEnabled(true);
+    ui->curList_tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->curList_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->curList_tableView->show();
 
     // signals
-    connect(ui->secList_tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
-            this, &SecuritiesConfigDialog::onSelectionChanged_secList);
+    connect(ui->curList_tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &CurrenciesConfigDialog::onSelectionChanged_secList);
 
     //////////////////////
     // Apis
@@ -49,9 +47,9 @@ SecuritiesConfigDialog::SecuritiesConfigDialog(QWidget *parent, DataBase *db) :
 
     // signals
     connect(yahoo, &YahooApi::received_SearchTicker,
-            this, &SecuritiesConfigDialog::onReceived_searchTicker);
-    connect(ui->ticker_lineEdit, &QLineEdit::textEdited,
-            this, &SecuritiesConfigDialog::onTextEdited_ticker);
+            this, &CurrenciesConfigDialog::onReceived_searchTicker);
+    connect(ui->search_lineEdit, &QLineEdit::textEdited,
+            this, &CurrenciesConfigDialog::onTextEdited_search);
 
     // fill combobox apis
     for(int i=(int)DataBase::API_YAHOO; i<=db->totalApis; i++)
@@ -79,23 +77,24 @@ SecuritiesConfigDialog::SecuritiesConfigDialog(QWidget *parent, DataBase *db) :
 
     // signals
     connect(ui->matches_tableWidget, &QTableWidget::itemSelectionChanged,
-            this, &SecuritiesConfigDialog::onSelectionChanged_matches);
+            this, &CurrenciesConfigDialog::onSelectionChanged_matches);
 
     /////////////////////
     // Update Button
     /////////////////////
     connect(ui->update_pushButton, &QPushButton::clicked,
-            this, &SecuritiesConfigDialog::onClicked_update);
+            this, &CurrenciesConfigDialog::onClicked_update);
 }
 
-SecuritiesConfigDialog::~SecuritiesConfigDialog()
+CurrenciesConfigDialog::~CurrenciesConfigDialog()
 {
     delete ui;
     delete model;
     delete yahoo;
 }
 
-void SecuritiesConfigDialog::onSelectionChanged_secList(const QItemSelection & selected, const QItemSelection & deselected)
+
+void CurrenciesConfigDialog::onSelectionChanged_secList(const QItemSelection & selected, const QItemSelection & deselected)
 {
     (void)deselected;
 
@@ -105,26 +104,21 @@ void SecuritiesConfigDialog::onSelectionChanged_secList(const QItemSelection & s
         return;
 
     m_selRow_secList = selected.indexes().first().row();
-    QAbstractItemModel *m = ui->secList_tableView->model();
+    QAbstractItemModel *m = ui->curList_tableView->model();
 
-    QString isin = m->index(m_selRow_secList, COL_SEC_Isin).data().toString();
-    QString name = m->index(m_selRow_secList, COL_SEC_Name).data().toString();
-    QString currency = m->index(m_selRow_secList, COL_SEC_CurrencyID).data().toString();
-    QString ticker = m->index(m_selRow_secList, COL_SEC_Ticker).data().toString();
-    QString api = m->index(m_selRow_secList, COL_SEC_ApiID).data().toString();
-    QString apiTicker = m->index(m_selRow_secList, COL_SEC_ApiTicker).data().toString();
+    QString name = m->index(m_selRow_secList, COL_CUR_Name).data().toString();
+    QString api = m->index(m_selRow_secList, COL_CUR_ApiID).data().toString();
+    QString apiTicker = m->index(m_selRow_secList, COL_CUR_ApiTicker).data().toString();
 
-    ui->isin_lineEdit->setText(isin);
     ui->name_lineEdit->setText(name);
-    ui->locCurr_lineEdit->setText(currency);
-    ui->ticker_lineEdit->setText(ticker);
+    ui->search_lineEdit->setText("");
     ui->api_comboBox->setCurrentText(api);
     ui->apiTicker_lineEdit->setText(apiTicker);
 
-    onTextEdited_ticker(ticker);
+    onTextEdited_search("");
 }
 
-void SecuritiesConfigDialog::onReceived_searchTicker(const QStringList &exchanges,
+void CurrenciesConfigDialog::onReceived_searchTicker(const QStringList &exchanges,
                                                     const QStringList &names,
                                                     const QStringList &types,
                                                     const QStringList &tickers  )
@@ -138,7 +132,7 @@ void SecuritiesConfigDialog::onReceived_searchTicker(const QStringList &exchange
         ui->matches_tableWidget->setItem(0, 3, new QTableWidgetItem(""));
         return;
     }
-    
+
     ui->matches_tableWidget->setRowCount(exchanges.size());
     for(int i=0; i<exchanges.size(); i++)
     {
@@ -149,7 +143,7 @@ void SecuritiesConfigDialog::onReceived_searchTicker(const QStringList &exchange
     }
 }
 
-void SecuritiesConfigDialog::onSelectionChanged_matches()
+void CurrenciesConfigDialog::onSelectionChanged_matches()
 {
     QList<QTableWidgetItem*> selected = ui->matches_tableWidget->selectedItems();
     if(selected.isEmpty())
@@ -160,13 +154,13 @@ void SecuritiesConfigDialog::onSelectionChanged_matches()
     ui->apiTicker_lineEdit->setText(apiTicker);
 }
 
-void SecuritiesConfigDialog::onTextEdited_ticker(const QString &text)
+void CurrenciesConfigDialog::onTextEdited_search(const QString &text)
 {
-    QAbstractItemModel *m = ui->secList_tableView->model();
-    QString api = m->index(m_selRow_secList, COL_SEC_ApiID).data().toString();
+    QAbstractItemModel *m = ui->curList_tableView->model();
+    QString api = m->index(m_selRow_secList, COL_CUR_ApiID).data().toString();
 
     ui->matches_tableWidget->clearSelection();
-    ui->ticker_lineEdit->setText(text.toUpper());
+    ui->search_lineEdit->setText(text.toUpper());
     if(text == "")
         return;
 
@@ -181,23 +175,19 @@ void SecuritiesConfigDialog::onTextEdited_ticker(const QString &text)
     }
 }
 
-void SecuritiesConfigDialog::onClicked_update()
+void CurrenciesConfigDialog::onClicked_update()
 {
-    QAbstractItemModel *m = ui->secList_tableView->model();
-
-    QString ticker = ui->ticker_lineEdit->text();
-    QModelIndex idx_ticker = m->index(m_selRow_secList, COL_SEC_Ticker);
-    m->setData(idx_ticker, ticker);
+    QAbstractItemModel *m = ui->curList_tableView->model();
 
     QString api = ui->api_comboBox->currentText();
-    QModelIndex idx_api = m->index(m_selRow_secList, COL_SEC_ApiID);
+    QModelIndex idx_api = m->index(m_selRow_secList, COL_CUR_ApiID);
     m->setData(idx_api, api);
 
     QString apiTicker = ui->apiTicker_lineEdit->text();
-    QModelIndex idx_apiTicker = m->index(m_selRow_secList, COL_SEC_ApiTicker);
+    QModelIndex idx_apiTicker = m->index(m_selRow_secList, COL_CUR_ApiTicker);
     m->setData(idx_apiTicker, apiTicker);
 
     m->submit();
 
-    emit m->dataChanged(idx_ticker, idx_apiTicker);
+    emit m->dataChanged(idx_api, idx_apiTicker);
 }

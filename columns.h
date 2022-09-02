@@ -25,4 +25,11 @@ typedef enum{
     COL_SEC_Notes,
 }securitiesColumns_t;
 
+typedef enum{
+    COL_CUR_ID=0,
+    COL_CUR_Name,
+    COL_CUR_ApiID,
+    COL_CUR_ApiTicker,
+}currenciesColumns_t;
+
 #endif // COLUMNS_H

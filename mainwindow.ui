@@ -100,6 +100,7 @@
     </property>
     <addaction name="actionOptions"/>
     <addaction name="actionSecurities_configuration"/>
+    <addaction name="actionCurrencies_configuration"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -133,6 +134,11 @@
   <action name="actionSecurities_configuration">
    <property name="text">
     <string>Securities configuration</string>
+   </property>
+  </action>
+  <action name="actionCurrencies_configuration">
+   <property name="text">
+    <string>Currencies configuration</string>
    </property>
   </action>
  </widget>

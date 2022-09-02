@@ -64,3 +64,10 @@ void MainWindow::on_actionSecurities_configuration_triggered()
     securitiesConfig_d->exec();
 }
 
+
+void MainWindow::on_actionCurrencies_configuration_triggered()
+{
+    currenciesConfig_d = new CurrenciesConfigDialog(this, db);
+    currenciesConfig_d->exec();
+}
+
