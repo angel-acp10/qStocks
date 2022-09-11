@@ -30,20 +30,22 @@ bool DataBase::init(void)
     if( !open() )
         return false;
 
-    if(!settingsTable_init())      return false;
-    if(!brokersTable_init())       return false;
-    if(!apisTable_init())          return false;
-    if(!watchGroupsTable_init())   return false;
-    if(!currenciesTable_init())    return false;
-    if(!securitiesTable_init())    return false;
-    if(!watchListsTable_init())    return false;
-    if(!transactionsTable_init())  return false;
-    if(!securityPricesTable_init()) return false;
-    if(!currencyPricesTable_init()) return false;
+    bool ret = true;
 
-    if(!transactionsView_init())   return false;
+    if(!settingsTable_init())      ret = false;
+    if(!brokersTable_init())       ret = false;
+    if(!apisTable_init())          ret = false;
+    if(!watchGroupsTable_init())   ret = false;
+    if(!currenciesTable_init())    ret = false;
+    if(!securitiesTable_init())    ret = false;
+    if(!watchListsTable_init())    ret = false;
+    if(!transactionsTable_init())  ret = false;
+    if(!securityPricesTable_init()) ret = false;
+    if(!currencyPricesTable_init()) ret = false;
 
-    return true;
+    if(!transactionsView_init())   ret = false;
+
+    return ret;
 }
 
 bool DataBase::open(void)
@@ -609,61 +611,63 @@ bool DataBase::securityPricesTable_addRecords(securityPrice_t &sp)
     return true;
 }
 
-bool DataBase::securityPricesTable_startUpdate()
+
+bool DataBase::currencyPricesTable_startUpdate()
 {
     QString q;
     QSqlQuery qry;
 
+    priceQuery_t priceQry;
+    qint64 firstBuy_ts;
+    qint64 lastPrice_ts;
+
+    // get first buy
+    q = "SELECT MIN(TimeStamp) FROM Transactions";
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+    qry.next();
+    firstBuy_ts = qry.value(0).toInt();
+
+
     q = "SELECT "
-            "p.SecurityID "
-            ",p.FirstBuy "
-            ",sp.FirstPrice "
-            ",sp.LastPrice "
-            ",s.ApiID "
-            ",s.ApiTicker "
+            "Currencies.ID, "
+            "Currencies.ApiID, "
+            "Currencies.ApiTicker, "
+            "cp.FirstPrice, "
+            "cp.LastPrice "
         "FROM "
-            "(SELECT "
-                "Transactions.SecurityID AS SecurityID "
-                ",MIN(Transactions.TimeStamp) AS FirstBuy "
-            "FROM "
-                "Transactions "
-            "GROUP BY "
-                "Transactions.SecurityID "
-            ") AS p "
+            "Currencies "
         "LEFT JOIN "
             "(SELECT "
-                "SecurityPrices.SecurityID AS SecurityID "
-                ",MIN(SecurityPrices.TimeStamp) AS FirstPrice "
-                ",MAX(SecurityPrices.TimeStamp) AS LastPrice "
+                "CurrencyPrices.CurrencyID AS CurrencyID "
+                ",MIN(CurrencyPrices.TimeStamp) AS FirstPrice "
+                ",MAX(CurrencyPrices.TimeStamp) AS LastPrice "
             "FROM "
-                "SecurityPrices "
+                "CurrencyPrices "
             "GROUP BY "
-                "SecurityPrices.SecurityID "
-            ") AS sp "
-        "ON p.SecurityID = sp.SecurityID "
-        "LEFT JOIN Securities as s ON p.SecurityID = s.ID";
-
+                "CurrencyPrices.CurrencyID "
+            ") AS cp "
+        "ON Currencies.ID = cp.CurrencyID ";
     if(!qry.exec(q))
     {
         SHOW_ERROR(qry);
         return false;
     }
 
-    priceQuery_t priceQry;
-    qint64 firstBuy_ts;
-    qint64 lastPrice_ts;
-
-    priceQry.priceType = PRICE_SECURITY;
+    priceQry.priceType = PRICE_CURRENCY;
     priceQry.end_ts = QDateTime::currentSecsSinceEpoch();
 
     while(qry.next())
     {
         priceQry.id = qry.value(0).toInt();
-        firstBuy_ts = qry.value(1).isNull() ? 0 : qry.value(1).toInt();
-        lastPrice_ts = qry.value(3).isNull() ? 0 : qry.value(3).toInt();
-        priceQry.api = (ApiEnum)qry.value(4).toInt();
-        priceQry.apiTicker = qry.value(5).toString();
+        priceQry.api = (ApiEnum)qry.value(1).toInt();
+        priceQry.apiTicker = qry.value(2).toString();
+        lastPrice_ts = qry.value(4).isNull() ? 0 : qry.value(4).toInt();
         qDebug()<<priceQry.apiTicker;
+
         if(lastPrice_ts == 0) // there's no new price
             priceQry.start_ts = firstBuy_ts;
         else // there is previous data
@@ -671,12 +675,10 @@ bool DataBase::securityPricesTable_startUpdate()
 
         m_priceQueriesQueue.enqueue(priceQry);
     }
-
-    securityPricesTable_continueUpdate();
     return true;
 }
 
-bool DataBase::securityPricesTable_continueUpdate()
+bool DataBase::pricesTable_continueUpdate()
 {
     priceQuery_t priceQry;
 
@@ -731,7 +733,7 @@ void DataBase::onReceived_GetDailyPrice(const int id,
         sp.low = low;
 
         securityPricesTable_addRecords(sp);
-        securityPricesTable_continueUpdate();
+        pricesTable_continueUpdate();
         break;
 
     case PRICE_CURRENCY:
@@ -743,7 +745,7 @@ void DataBase::onReceived_GetDailyPrice(const int id,
         cp.low = low;
 
         currencyPricesTable_addRecords(cp);
-        currencyPricesTable_continueUpdate();
+        pricesTable_continueUpdate();
         break;
 
     default:
@@ -808,59 +810,62 @@ bool DataBase::currencyPricesTable_addRecords(currencyPrice_t &cp)
     return true;
 }
 
-bool DataBase::currencyPricesTable_startUpdate()
+
+bool DataBase::securityPricesTable_startUpdate()
 {
     QString q;
     QSqlQuery qry;
 
-    // get first buy
+    priceQuery_t priceQry;
     qint64 firstBuy_ts;
-    q = "SELECT MIN(TimeStamp) FROM Transactions";
-    if(!qry.exec(q))
-    {
-        SHOW_ERROR(qry);
-        return false;
-    }
-    qry.next();
-    firstBuy_ts = qry.value(0).toInt();
-
+    qint64 lastPrice_ts;
 
     q = "SELECT "
-            "Currencies.ID, "
-            "Currencies.ApiID, "
-            "Currencies.ApiTicker, "
-            "cp.FirstPrice, "
-            "cp.LastPrice "
+            "p.SecurityID "
+            ",p.FirstBuy "
+            ",sp.FirstPrice "
+            ",sp.LastPrice "
+            ",s.ApiID "
+            ",s.ApiTicker "
         "FROM "
-            "Currencies "
+            "(SELECT "
+                "Transactions.SecurityID AS SecurityID "
+                ",MIN(Transactions.TimeStamp) AS FirstBuy "
+            "FROM "
+                "Transactions "
+            "GROUP BY "
+                "Transactions.SecurityID "
+            ") AS p "
         "LEFT JOIN "
             "(SELECT "
-                "CurrencyPrices.CurrencyID AS CurrencyID "
-                ",MIN(CurrencyPrices.TimeStamp) AS FirstPrice "
-                ",MAX(CurrencyPrices.TimeStamp) AS LastPrice "
+                "SecurityPrices.SecurityID AS SecurityID "
+                ",MIN(SecurityPrices.TimeStamp) AS FirstPrice "
+                ",MAX(SecurityPrices.TimeStamp) AS LastPrice "
             "FROM "
-                "CurrencyPrices "
+                "SecurityPrices "
             "GROUP BY "
-                "CurrencyPrices.CurrencyID "
-            ") AS cp "
-        "ON Currencies.ID = cp.CurrencyID ";
+                "SecurityPrices.SecurityID "
+            ") AS sp "
+        "ON p.SecurityID = sp.SecurityID "
+        "LEFT JOIN Securities as s ON p.SecurityID = s.ID";
+
     if(!qry.exec(q))
     {
         SHOW_ERROR(qry);
         return false;
     }
 
-    qint64 lastPrice_ts;
-    priceQuery_t priceQry;
-    priceQry.priceType = PRICE_CURRENCY;
+    priceQry.priceType = PRICE_SECURITY;
     priceQry.end_ts = QDateTime::currentSecsSinceEpoch();
 
     while(qry.next())
     {
         priceQry.id = qry.value(0).toInt();
-        priceQry.api = (ApiEnum)qry.value(1).toInt();
-        priceQry.apiTicker = qry.value(2).toString();
-        lastPrice_ts = qry.value(4).isNull() ? 0 : qry.value(4).toInt();
+        firstBuy_ts = qry.value(1).isNull() ? 0 : qry.value(1).toInt();
+        lastPrice_ts = qry.value(3).isNull() ? 0 : qry.value(3).toInt();
+        priceQry.api = (ApiEnum)qry.value(4).toInt();
+        priceQry.apiTicker = qry.value(5).toString();
+        qDebug()<<priceQry.apiTicker;
 
         if(lastPrice_ts == 0) // there's no new price
             priceQry.start_ts = firstBuy_ts;
@@ -869,38 +874,21 @@ bool DataBase::currencyPricesTable_startUpdate()
 
         m_priceQueriesQueue.enqueue(priceQry);
     }
-
-    currencyPricesTable_continueUpdate();
     return true;
 }
 
-bool DataBase::currencyPricesTable_continueUpdate()
-{
-    priceQuery_t priceQry;
 
-    // dequeues until a not null apiTicker is found
-    while(m_priceQueriesQueue.size() > 0)
-    {
-        priceQry = m_priceQueriesQueue.dequeue();
-        if(priceQry.apiTicker != "")
-        {
-            switch(priceQry.api)
-            {
-            case API_YAHOO:
-                yahoo->getDailyPrice(priceQry.id,
-                                     priceQry.priceType,
-                                       priceQry.apiTicker,
-                                       priceQry.start_ts,
-                                       priceQry.end_ts);
-                break;
-            default:
-                break;
-            }
-            return true;
-        }
-    }
-    return false; // no more items are available
+bool DataBase::pricesTable_startUpdate()
+{
+    bool ret = true;
+
+    if(!securityPricesTable_startUpdate())  ret = false;
+    if(!currencyPricesTable_startUpdate())  ret = false;
+    pricesTable_continueUpdate();
+
+    return ret;
 }
+
 
 bool DataBase::transactionsView_init()
 {

@@ -41,7 +41,7 @@ Transactions::Transactions(QWidget *parent, DataBase *db) :
 
     // signals
     connect(ui->importCsv_pushButton, SIGNAL(clicked()), this, SLOT(onClicked_importCsv()));
-    connect(ui->update_pushButton, SIGNAL(clicked()), db, SLOT(currencyPricesTable_startUpdate()));
+    connect(ui->update_pushButton, SIGNAL(clicked()), db, SLOT(pricesTable_startUpdate()));
 }
 
 Transactions::~Transactions()

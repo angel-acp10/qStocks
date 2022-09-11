@@ -151,12 +151,15 @@ public:
     // securityPrices
     bool securityPricesTable_init();
     bool securityPricesTable_addRecords(securityPrice_t &sp);
-    bool securityPricesTable_continueUpdate();
+    bool securityPricesTable_startUpdate();
 
     // currencyPrices
     bool currencyPricesTable_init();
     bool currencyPricesTable_addRecords(currencyPrice_t &cp);
-    bool currencyPricesTable_continueUpdate();
+    bool currencyPricesTable_startUpdate();
+
+    // prices table - common functions for all prices
+    bool pricesTable_continueUpdate();
 
     // transactions view
     bool transactionsView_init();
@@ -184,8 +187,7 @@ private:
     QQueue<priceQuery_t> m_priceQueriesQueue;
 
 private slots:
-    bool securityPricesTable_startUpdate();
-    bool currencyPricesTable_startUpdate();
+    bool pricesTable_startUpdate();
     void onReceived_GetDailyPrice(const int id,
                                      const int priceType,
                                      const QString &symbol,
