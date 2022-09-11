@@ -134,11 +134,13 @@ public:
     bool currenciesTable_init();
     bool currenciesTable_addRecord(currency_t &c);
     int currenciesTable_getId(QString &name);
+    bool currenciesTable_getCurrency(const int currencyId, currency_t &out_currency);
 
     // securities table
     bool securitiesTable_init();
     bool securitiesTable_addRecord(security_t &s);
     int securitiesTable_getId(QString &isin, int currencyId);
+    bool securitiesTable_getSecurity(const int securityId, security_t &out_security);
 
     // watchLists table
     bool watchListsTable_init();
@@ -152,11 +154,19 @@ public:
     bool securityPricesTable_init();
     bool securityPricesTable_addRecords(securityPrice_t &sp);
     bool securityPricesTable_startUpdate();
+    bool securityPricesTable_get(const int securityId,
+                                 const qint64 minTimeStamp,
+                                 const qint64 maxTimeStamp,
+                                 securityPrice_t &out_sp);
 
     // currencyPrices
     bool currencyPricesTable_init();
     bool currencyPricesTable_addRecords(currencyPrice_t &cp);
     bool currencyPricesTable_startUpdate();
+    bool currencyPricesTable_get(const int currencyId,
+                                 const qint64 minTimeStamp,
+                                 const qint64 maxTimeStamp,
+                                 currencyPrice_t &out_cp);
 
     // prices table - common functions for all prices
     bool pricesTable_continueUpdate();

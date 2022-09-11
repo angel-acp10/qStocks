@@ -355,6 +355,34 @@ int DataBase::currenciesTable_getId(QString &name)
     return currencyId;
 }
 
+bool DataBase::currenciesTable_getCurrency(const int currencyId, currency_t &out_currency)
+{
+    QString q;
+    QSqlQuery qry;
+
+    q = QString("SELECT "
+                "Currencies.ID "
+                ",Currencies.Name "
+                ",Currencies.ApiID "
+                ",Currencies.ApiTicker "
+            "FROM "
+                "Currencies "
+            "WHERE "
+                "Currencies.ID = %1").arg(currencyId);
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+    qry.next();
+
+    out_currency.id = qry.value(0).toInt();
+    out_currency.name = qry.value(1).toString();
+    out_currency.apiId = (ApiEnum)qry.value(2).toInt();
+    out_currency.apiTicker = qry.value(3).toString();
+    return true;
+}
+
 // securities table
 bool DataBase::securitiesTable_init()
 {
@@ -434,6 +462,52 @@ int DataBase::securitiesTable_getId(QString &isin, int currencyId)
     qry.next();
     securityId = qry.value(0).toInt();
     return securityId;
+}
+
+bool DataBase::securitiesTable_getSecurity(const int securityId, security_t &out_security)
+{
+    QString q;
+    QSqlQuery qry;
+
+    q = QString("SELECT "
+            "Securities.Isin "
+            ",Securities.Name "
+            ",Securities.Ticker "
+            ",Securities.ApiID "
+            ",Securities.ApiTicker "
+            ",Securities.Notes "
+            ",Securities.CurrencyID "
+            ",Currencies.Name "
+            ",Currencies.ApiID AS CurrApiID "
+            ",Currencies.ApiTicker AS CurrApiTicker "
+        "FROM "
+            "Securities "
+        "LEFT JOIN "
+            "Currencies "
+        "ON "
+            "Securities.CurrencyID = Currencies.ID "
+        "WHERE "
+            "Securities.ID = %1").arg(securityId);
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+    qry.next();
+
+    out_security.id = securityId;
+    out_security.isin = qry.value(0).toString();
+    out_security.name = qry.value(1).toString();
+    out_security.ticker = qry.value(2).toString();
+    out_security.apiId = (ApiEnum)qry.value(3).toInt();
+    out_security.apiTicker = qry.value(4).toString();
+    out_security.notes = qry.value(5).toString();
+
+    out_security.currency.id = qry.value(6).toInt();
+    out_security.currency.name = qry.value(7).toString();
+    out_security.currency.apiId = (ApiEnum)qry.value(8).toInt();
+    out_security.currency.apiTicker = qry.value(9).toString();
+    return true;
 }
 
 // watchLists table
@@ -678,6 +752,63 @@ bool DataBase::currencyPricesTable_startUpdate()
     return true;
 }
 
+bool DataBase::currencyPricesTable_get(const int currencyId,
+                             const qint64 minTimeStamp,
+                             const qint64 maxTimeStamp,
+                             currencyPrice_t &out_cp)
+{
+    currency_t curr;
+    if(!currenciesTable_getCurrency(currencyId, curr))
+        return false;
+
+    QString q;
+    QSqlQuery qry;
+    currencyPrice_t cp;
+
+    q = QString("SELECT "
+            "TimeStamp "
+            ",Open "
+            ",Close "
+            ",High "
+            ",Low "
+        "FROM "
+            "CurrencyPrices "
+        "WHERE "
+            "CurrencyID=%1 "
+            "AND TimeStamp >= %2 "
+            "AND TimeStamp <= %3 "
+        "ORDER BY TimeStamp")
+            .arg(currencyId)
+            .arg(minTimeStamp)
+            .arg(maxTimeStamp);
+
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+
+    int rows = qry.size();
+    out_cp.timeStamp.resize(rows);
+    out_cp.open.resize(rows);
+    out_cp.close.resize(rows);
+    out_cp.high.resize(rows);
+    out_cp.low.resize(rows);
+
+    out_cp.currency = curr;
+    int i=0;
+    while(qry.next())
+    {
+        out_cp.timeStamp[i] = qry.value(0).toInt();
+        out_cp.open[i] = qry.value(1).toDouble();
+        out_cp.close[i] = qry.value(2).toDouble();
+        out_cp.high[i] = qry.value(3).toDouble();
+        out_cp.low[i] = qry.value(4).toDouble();
+        i++;
+    }
+    return true;
+}
+
 bool DataBase::pricesTable_continueUpdate()
 {
     priceQuery_t priceQry;
@@ -884,6 +1015,64 @@ bool DataBase::securityPricesTable_startUpdate()
     return true;
 }
 
+bool DataBase::securityPricesTable_get(const int securityId,
+                             const qint64 minTimeStamp,
+                             const qint64 maxTimeStamp,
+                             securityPrice_t &out_sp)
+{
+    security_t sec;
+    if(!securitiesTable_getSecurity(securityId, sec))
+        return false;
+
+    QString q;
+    QSqlQuery qry;
+
+    q = QString("SELECT "
+            "TimeStamp "
+            ",Open "
+            ",Close "
+            ",High "
+            ",Low "
+            ",Volume "
+        "FROM "
+            "SecurityPrices "
+        "WHERE "
+            "SecurityID=%1 "
+            "AND TimeStamp >= %2 "
+            "AND TimeStamp <= %3 "
+        "ORDER BY TimeStamp")
+            .arg(securityId)
+            .arg(minTimeStamp)
+            .arg(maxTimeStamp);
+
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+
+    int rows = qry.size();
+    out_sp.timeStamp.resize(rows);
+    out_sp.open.resize(rows);
+    out_sp.close.resize(rows);
+    out_sp.high.resize(rows);
+    out_sp.low.resize(rows);
+    out_sp.volume.resize(rows);
+
+    out_sp.security = sec;
+    int i=0;
+    while(qry.next())
+    {
+        out_sp.timeStamp[i] = qry.value(0).toInt();
+        out_sp.open[i] = qry.value(1).toDouble();
+        out_sp.close[i] = qry.value(2).toDouble();
+        out_sp.high[i] = qry.value(3).toDouble();
+        out_sp.low[i] = qry.value(4).toDouble();
+        out_sp.volume[i] = qry.value(5).toDouble();
+        i++;
+    }
+    return true;
+}
 
 bool DataBase::pricesTable_startUpdate()
 {
