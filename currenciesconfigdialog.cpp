@@ -167,7 +167,7 @@ void CurrenciesConfigDialog::onTextEdited_search(const QString &text)
     switch(db->stringToApiEnum(api))
     {
     case DataBase::API_YAHOO:
-        yahoo->SearchTicker(text);
+        yahoo->searchTicker(text);
         break;
 
     default:

@@ -18,22 +18,25 @@ YahooApi::~YahooApi()
     delete manager;
 }
 
-void YahooApi::SearchTicker(const QString &ticker)
+void YahooApi::searchTicker(const QString &ticker)
 {
     QString url = "https://query1.finance.yahoo.com/v1/finance/search?q=" + ticker;
     request.setUrl(QUrl(url));
     manager->get(request);
 }
 
-void YahooApi::GetDailyStockPrice(const QString &ticker, const QDateTime start, const QDateTime end)
+void YahooApi::getDailyPrice(const int id, const int priceType, const QString &ticker, const qint64 startEpoch, const qint64 endEpoch)
 {
+    m_id = id;
+    m_priceType = priceType;
     QString url = QString("https://query1.finance.yahoo.com/v8/finance/chart/%1?"
                           "&interval=1d"
                           "&period1=%2"
                           "&period2=%3")
                             .arg(ticker)
-                            .arg(start.toSecsSinceEpoch())
-                            .arg(end.toSecsSinceEpoch());
+                            .arg(startEpoch)
+                            .arg(endEpoch);
+    qDebug()<<"YahooApi::getDailyPrice - "<<url;
     request.setUrl(QUrl(url));
     manager->get(request);
 }
@@ -145,5 +148,5 @@ void YahooApi::decodeResponse_GetDailyStockPrice(const QByteArray answer)
     for(auto i = rLow.begin(); i != rLow.end(); i++)
         low.append( (*i).toDouble() );
 
-    emit received_GetDailyStockPrice(symbol, currency, unixTime, open, close, high, low);
+    emit received_GetDailyPrice(m_id, m_priceType, symbol, currency, unixTime, open, close, high, low);
 }

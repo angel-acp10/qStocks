@@ -15,26 +15,36 @@ public:
     ~YahooApi();
 
 public slots:
-    void SearchTicker(const QString &ticker);
-    void GetDailyStockPrice(const QString &ticker, const QDateTime start, const QDateTime end);
+    void searchTicker(const QString &ticker);
+    void getDailyPrice(const int id,
+                       const int priceType,
+                       const QString &ticker,
+                       const qint64 startEpoch,
+                       const qint64 endEpoch);
 
 signals:
     void received_SearchTicker(const QStringList &exchanges,
                                 const QStringList &names,
                                 const QStringList &types,
                                 const QStringList &tickers );
-    void received_GetDailyStockPrice(const QString &symbol,
-                                     const QString &currency,
-                                     const QVector<qint64> &unixTime,
-                                     const QVector<double> &open,
-                                     const QVector<double> &close,
-                                     const QVector<double> &high,
-                                     const QVector<double> &low);
+    void received_GetDailyPrice(const int id,
+                                 const int priceType,
+                                 const QString &symbol,
+                                 const QString &currency,
+                                 const QVector<qint64> &unixTime,
+                                 const QVector<double> &open,
+                                 const QVector<double> &close,
+                                 const QVector<double> &high,
+                                 const QVector<double> &low);
 
 private:
-    QNetworkAccessManager *manager;
-    QNetworkRequest request;
+    int m_id;
+    int m_priceType;
+    QString m_ticker;
+    qint64 m_startEpoch;
+    qint64 m_endEpoch;
 
+    // decode response
     typedef struct{
         const QString baseUrl;
         void(YahooApi::*decode)(const QByteArray answer);
@@ -42,6 +52,9 @@ private:
 
     void decodeResponse_SearchTicker(const QByteArray answer);
     void decodeResponse_GetDailyStockPrice(const QByteArray answer);
+
+    QNetworkAccessManager *manager;
+    QNetworkRequest request;
 
     decodeResponse_t decodeArray[3] = {
         {"https://query1.finance.yahoo.com/v1/finance/search?q=", &YahooApi::decodeResponse_SearchTicker},

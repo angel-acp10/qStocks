@@ -5,6 +5,9 @@
 #include <QtSql>
 #include <QMetaEnum>
 #include <QObject>
+#include <QQueue>
+
+#include "yahooapi.h"
 
 class DataBase : public QObject
 {
@@ -33,6 +36,11 @@ public:
     };
     Q_ENUM(ApiEnum)
     const int totalApis = 1;
+
+    enum PriceEnum{
+        PRICE_SECURITY = 1,
+        PRICE_CURRENCY,
+    };
 
     typedef struct{
         int id;
@@ -143,10 +151,12 @@ public:
     // securityPrices
     bool securityPricesTable_init();
     bool securityPricesTable_addRecords(securityPrice_t &sp);
+    bool securityPricesTable_continueUpdate();
 
     // currencyPrices
     bool currencyPricesTable_init();
     bool currencyPricesTable_addRecords(currencyPrice_t &cp);
+    bool currencyPricesTable_continueUpdate();
 
     // transactions view
     bool transactionsView_init();
@@ -160,8 +170,31 @@ public:
 
 private:
     QString dbFile;
+    YahooApi *yahoo;
 
-    enum ApiEnum m_selectedApi;
+    typedef struct{
+        enum PriceEnum priceType;
+        int id;
+        enum ApiEnum api;
+        QString apiTicker;
+        qint64 start_ts;
+        qint64 end_ts;
+    }priceQuery_t;
+
+    QQueue<priceQuery_t> m_priceQueriesQueue;
+
+private slots:
+    bool securityPricesTable_startUpdate();
+    bool currencyPricesTable_startUpdate();
+    void onReceived_GetDailyPrice(const int id,
+                                     const int priceType,
+                                     const QString &symbol,
+                                     const QString &currency,
+                                     const QVector<qint64> &unixTime,
+                                     const QVector<double> &open,
+                                     const QVector<double> &close,
+                                     const QVector<double> &high,
+                                     const QVector<double> &low);
 };
 
 #endif // DATABASE_H

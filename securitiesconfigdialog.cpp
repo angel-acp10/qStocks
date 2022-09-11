@@ -173,7 +173,7 @@ void SecuritiesConfigDialog::onTextEdited_ticker(const QString &text)
     switch(db->stringToApiEnum(api))
     {
     case DataBase::API_YAHOO:
-        yahoo->SearchTicker(text);
+        yahoo->searchTicker(text);
         break;
 
     default:

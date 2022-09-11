@@ -8,6 +8,11 @@ DataBase::DataBase(const QString & dbFile)
 {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(dbFile);
+
+    yahoo = new YahooApi(NULL);
+
+    connect(yahoo, &YahooApi::received_GetDailyPrice,
+            this, &DataBase::onReceived_GetDailyPrice);
 }
 
 DataBase::~DataBase()
@@ -16,6 +21,8 @@ DataBase::~DataBase()
     if(db.isOpen())
         db.close();
     QSqlDatabase::removeDatabase(db.connectionName());
+
+    delete yahoo;
 }
 
 bool DataBase::init(void)
@@ -216,8 +223,6 @@ bool DataBase::brokersTable_init()
 // APIs table
 bool DataBase::apisTable_init()
 {
-    QStringList defApis;
-
     QString q;
     QSqlQuery qry;
 
@@ -233,7 +238,7 @@ bool DataBase::apisTable_init()
         return false;
     }
 
-    q = "INSERT INTO Apis (ID, Name) VALUES (?, ?);";
+    q = "INSERT or REPLACE INTO Apis (ID, Name) VALUES (?, ?);";
     for(int i=(int)API_YAHOO; i<=totalApis; i++)
     {
         qry.prepare(q);
@@ -559,7 +564,8 @@ bool DataBase::securityPricesTable_init()
         "Low	DOUBLE,"
         "Volume	DOUBLE,"
         "FOREIGN KEY(SecurityID) REFERENCES Securities(ID),"
-        "PRIMARY KEY(ID AUTOINCREMENT)"
+        "PRIMARY KEY(ID AUTOINCREMENT),"
+        "UNIQUE(SecurityID,TimeStamp)"
     ");";
     if(!qry.exec(q))
     {
@@ -574,7 +580,7 @@ bool DataBase::securityPricesTable_addRecords(securityPrice_t &sp)
     QSqlQuery qry;
     QString q;
 
-    q = "INSERT or REPLACE INTO Transactions ("
+    q = "INSERT or REPLACE INTO SecurityPrices ("
         "SecurityID,"
         "TimeStamp,"
         "Open,"
@@ -592,7 +598,8 @@ bool DataBase::securityPricesTable_addRecords(securityPrice_t &sp)
         qry.addBindValue(sp.close.at(i));
         qry.addBindValue(sp.high.at(i));
         qry.addBindValue(sp.low.at(i));
-        qry.addBindValue(sp.volume.at(i));
+        qry.addBindValue(0);
+        //qry.addBindValue(sp.volume.at(i));
         if(!qry.exec())
         {
             SHOW_ERROR(qry);
@@ -600,6 +607,148 @@ bool DataBase::securityPricesTable_addRecords(securityPrice_t &sp)
         }
     }
     return true;
+}
+
+bool DataBase::securityPricesTable_startUpdate()
+{
+    QString q;
+    QSqlQuery qry;
+
+    q = "SELECT "
+            "p.SecurityID "
+            ",p.FirstBuy "
+            ",sp.FirstPrice "
+            ",sp.LastPrice "
+            ",s.ApiID "
+            ",s.ApiTicker "
+        "FROM "
+            "(SELECT "
+                "Transactions.SecurityID AS SecurityID "
+                ",MIN(Transactions.TimeStamp) AS FirstBuy "
+            "FROM "
+                "Transactions "
+            "GROUP BY "
+                "Transactions.SecurityID "
+            ") AS p "
+        "LEFT JOIN "
+            "(SELECT "
+                "SecurityPrices.SecurityID AS SecurityID "
+                ",MIN(SecurityPrices.TimeStamp) AS FirstPrice "
+                ",MAX(SecurityPrices.TimeStamp) AS LastPrice "
+            "FROM "
+                "SecurityPrices "
+            "GROUP BY "
+                "SecurityPrices.SecurityID "
+            ") AS sp "
+        "ON p.SecurityID = sp.SecurityID "
+        "LEFT JOIN Securities as s ON p.SecurityID = s.ID";
+
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+
+    priceQuery_t priceQry;
+    qint64 firstBuy_ts;
+    qint64 lastPrice_ts;
+
+    priceQry.priceType = PRICE_SECURITY;
+    priceQry.end_ts = QDateTime::currentSecsSinceEpoch();
+
+    while(qry.next())
+    {
+        priceQry.id = qry.value(0).toInt();
+        firstBuy_ts = qry.value(1).isNull() ? 0 : qry.value(1).toInt();
+        lastPrice_ts = qry.value(3).isNull() ? 0 : qry.value(3).toInt();
+        priceQry.api = (ApiEnum)qry.value(4).toInt();
+        priceQry.apiTicker = qry.value(5).toString();
+        qDebug()<<priceQry.apiTicker;
+        if(lastPrice_ts == 0) // there's no new price
+            priceQry.start_ts = firstBuy_ts;
+        else // there is previous data
+            priceQry.start_ts = lastPrice_ts;
+
+        m_priceQueriesQueue.enqueue(priceQry);
+    }
+
+    securityPricesTable_continueUpdate();
+    return true;
+}
+
+bool DataBase::securityPricesTable_continueUpdate()
+{
+    priceQuery_t priceQry;
+
+    // dequeues until a not null apiTicker is found
+    while(m_priceQueriesQueue.size() > 0)
+    {
+        priceQry = m_priceQueriesQueue.dequeue();
+        if(priceQry.apiTicker != "")
+        {
+            switch(priceQry.api)
+            {
+            case API_YAHOO:
+                yahoo->getDailyPrice(priceQry.id,
+                                     priceQry.priceType,
+                                       priceQry.apiTicker,
+                                       priceQry.start_ts,
+                                       priceQry.end_ts);
+                break;
+            default:
+                break;
+            }
+            return true;
+        }
+    }
+    return false; // no more items are available
+}
+
+void DataBase::onReceived_GetDailyPrice(const int id,
+                                         const int priceType,
+                                         const QString &symbol,
+                                         const QString &currency,
+                                         const QVector<qint64> &unixTime,
+                                         const QVector<double> &open,
+                                         const QVector<double> &close,
+                                         const QVector<double> &high,
+                                         const QVector<double> &low)
+{
+    (void)symbol;
+    (void)currency;
+
+    securityPrice_t sp;
+    currencyPrice_t cp;
+
+    switch((PriceEnum)priceType)
+    {
+    case PRICE_SECURITY:
+        sp.security.id = id;
+        sp.timeStamp = unixTime;
+        sp.open = open;
+        sp.close = close;
+        sp.high = high;
+        sp.low = low;
+
+        securityPricesTable_addRecords(sp);
+        securityPricesTable_continueUpdate();
+        break;
+
+    case PRICE_CURRENCY:
+        cp.currency.id = id;
+        cp.timeStamp = unixTime;
+        cp.open = open;
+        cp.close = close;
+        cp.high = high;
+        cp.low = low;
+
+        currencyPricesTable_addRecords(cp);
+        currencyPricesTable_continueUpdate();
+        break;
+
+    default:
+        break;
+    }
 }
 
 // currencyPrices
@@ -617,7 +766,8 @@ bool DataBase::currencyPricesTable_init()
         "High	DOUBLE,"
         "Low	DOUBLE,"
         "FOREIGN KEY(CurrencyID) REFERENCES Currencies(ID),"
-        "PRIMARY KEY(ID AUTOINCREMENT)"
+        "PRIMARY KEY(ID AUTOINCREMENT),"
+        "UNIQUE(CurrencyID,TimeStamp)"
     ");";
     if(!qry.exec(q))
     {
@@ -658,6 +808,100 @@ bool DataBase::currencyPricesTable_addRecords(currencyPrice_t &cp)
     return true;
 }
 
+bool DataBase::currencyPricesTable_startUpdate()
+{
+    QString q;
+    QSqlQuery qry;
+
+    // get first buy
+    qint64 firstBuy_ts;
+    q = "SELECT MIN(TimeStamp) FROM Transactions";
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+    qry.next();
+    firstBuy_ts = qry.value(0).toInt();
+
+
+    q = "SELECT "
+            "Currencies.ID, "
+            "Currencies.ApiID, "
+            "Currencies.ApiTicker, "
+            "cp.FirstPrice, "
+            "cp.LastPrice "
+        "FROM "
+            "Currencies "
+        "LEFT JOIN "
+            "(SELECT "
+                "CurrencyPrices.CurrencyID AS CurrencyID "
+                ",MIN(CurrencyPrices.TimeStamp) AS FirstPrice "
+                ",MAX(CurrencyPrices.TimeStamp) AS LastPrice "
+            "FROM "
+                "CurrencyPrices "
+            "GROUP BY "
+                "CurrencyPrices.CurrencyID "
+            ") AS cp "
+        "ON Currencies.ID = cp.CurrencyID ";
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+
+    qint64 lastPrice_ts;
+    priceQuery_t priceQry;
+    priceQry.priceType = PRICE_CURRENCY;
+    priceQry.end_ts = QDateTime::currentSecsSinceEpoch();
+
+    while(qry.next())
+    {
+        priceQry.id = qry.value(0).toInt();
+        priceQry.api = (ApiEnum)qry.value(1).toInt();
+        priceQry.apiTicker = qry.value(2).toString();
+        lastPrice_ts = qry.value(4).isNull() ? 0 : qry.value(4).toInt();
+
+        if(lastPrice_ts == 0) // there's no new price
+            priceQry.start_ts = firstBuy_ts;
+        else // there is previous data
+            priceQry.start_ts = lastPrice_ts;
+
+        m_priceQueriesQueue.enqueue(priceQry);
+    }
+
+    currencyPricesTable_continueUpdate();
+    return true;
+}
+
+bool DataBase::currencyPricesTable_continueUpdate()
+{
+    priceQuery_t priceQry;
+
+    // dequeues until a not null apiTicker is found
+    while(m_priceQueriesQueue.size() > 0)
+    {
+        priceQry = m_priceQueriesQueue.dequeue();
+        if(priceQry.apiTicker != "")
+        {
+            switch(priceQry.api)
+            {
+            case API_YAHOO:
+                yahoo->getDailyPrice(priceQry.id,
+                                     priceQry.priceType,
+                                       priceQry.apiTicker,
+                                       priceQry.start_ts,
+                                       priceQry.end_ts);
+                break;
+            default:
+                break;
+            }
+            return true;
+        }
+    }
+    return false; // no more items are available
+}
+
 bool DataBase::transactionsView_init()
 {
     QSqlQuery qry;
@@ -691,7 +935,6 @@ bool DataBase::transactionsView_init()
     }
     return true;
 }
-
 
 DataBase::ApiEnum DataBase::stringToApiEnum(const QString &text)
 {
