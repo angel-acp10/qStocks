@@ -39,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->mainMenu_listWidget, &QListWidget::currentRowChanged,
             ui->stackedWidget, &QStackedWidget::setCurrentIndex);
 
+    connect(db, &DataBase::pricesTable_status,
+            ui->priceStatus_lineEdit, &QLineEdit::setText);
     //
     //---------------------------------
 

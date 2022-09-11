@@ -170,6 +170,8 @@ public:
     DataBase::BrokerEnum stringToBrokerEnum(const QString &text);
     QString brokerEnumToString(const DataBase::BrokerEnum &enumValue);
 
+signals:
+    void pricesTable_status(const QString status);
 
 private:
     QString dbFile;

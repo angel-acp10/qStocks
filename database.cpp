@@ -688,6 +688,7 @@ bool DataBase::pricesTable_continueUpdate()
         priceQry = m_priceQueriesQueue.dequeue();
         if(priceQry.apiTicker != "")
         {
+            emit pricesTable_status(QString("updating %1").arg(priceQry.apiTicker));
             switch(priceQry.api)
             {
             case API_YAHOO:
@@ -702,8 +703,14 @@ bool DataBase::pricesTable_continueUpdate()
             }
             return true;
         }
+        else
+        {
+            emit pricesTable_status("ERROR: missing ApiTicker");
+        }
     }
-    return false; // no more items are available
+    // no more items are available
+    emit pricesTable_status("updated");
+    return false;
 }
 
 void DataBase::onReceived_GetDailyPrice(const int id,
