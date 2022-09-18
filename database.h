@@ -89,6 +89,7 @@ public:
 
     typedef struct{
         security_t security;
+        int units_currencyId; // for native prices it will be -1
         QVector<qint64> timeStamp;
         QVector<double> open;
         QVector<double> close;
@@ -170,6 +171,16 @@ public:
 
     // prices table - common functions for all prices
     bool pricesTable_continueUpdate();
+
+    // portfolio
+    bool currentPortfolioQuery_get(QVector<int> &secId,
+                                   QVector<QString> &ticker,
+                                   QVector<double> &quantity,
+                                   QVector<double> &invValue,
+                                   QVector<double> &comissions,
+                                   QVector<int> &currId,
+                                   QVector<double> &lastPrice,
+                                   QVector<int> &locCurrId);
 
     // transactions view
     bool transactionsView_init();

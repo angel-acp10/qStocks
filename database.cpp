@@ -844,6 +844,73 @@ bool DataBase::pricesTable_continueUpdate()
     return false;
 }
 
+bool DataBase::currentPortfolioQuery_get(QVector<int> &secId,
+                                  QVector<QString> &ticker,
+                                  QVector<double> &quantity,
+                                  QVector<double> &invValue,
+                                  QVector<double> &comissions,
+                                  QVector<int> &currId,
+                                  QVector<double> &lastPrice,
+                                  QVector<int> &locCurrId)
+{
+    QString q;
+    QSqlQuery qry;
+
+    q = "SELECT "
+            "Transactions.SecurityID AS SecurityID "
+            ",Securities.Ticker AS Ticker "
+            ",SUM(Transactions.Quantity) AS Quantity "
+            ",SUM(Transactions.Value) AS InvValue "
+            ",SUM(Transactions.Comissions) AS Comissions "
+            ",Transactions.CurrencyID AS CurrID "
+            ",LastPrice.Close AS LastPriceAtClose "
+            ",Securities.CurrencyID AS LocCurrID "
+        "FROM Transactions "
+
+        "LEFT JOIN "
+            "Securities "
+        "ON Transactions.SecurityID = Securities.ID "
+
+        "LEFT JOIN "
+            "(SELECT "
+                "MAX(TimeStamp) "
+                ",SecurityID "
+                ",Close "
+            "FROM "
+                "SecurityPrices "
+            "GROUP BY SecurityID) AS LastPrice "
+        "ON Transactions.SecurityID = LastPrice.SecurityID "
+
+        "GROUP BY "
+            "Transactions.SecurityID "
+        "ORDER BY Quantity DESC ";
+    if(!qry.exec(q))
+    {
+        SHOW_ERROR(qry);
+        return false;
+    }
+
+    double qty;
+    while(qry.next())
+    {
+        qty = qry.value(2).toDouble();
+        if(qty <= 0)
+            break;
+
+
+        secId.append(qry.value(0).toInt() );
+        ticker.append(qry.value(1).toString() );
+        quantity.append(qty );
+        invValue.append(qry.value(3).toDouble() );
+        comissions.append(qry.value(4).toDouble() );
+        currId.append(qry.value(5).toInt() );
+        lastPrice.append(qry.value(6).toDouble() );
+        locCurrId.append(qry.value(7).toInt() );
+    }
+
+    return true;
+}
+
 void DataBase::onReceived_GetDailyPrice(const int id,
                                          const int priceType,
                                          const QString &symbol,
@@ -864,6 +931,7 @@ void DataBase::onReceived_GetDailyPrice(const int id,
     {
     case PRICE_SECURITY:
         sp.security.id = id;
+        sp.units_currencyId = -1; // native currency
         sp.timeStamp = unixTime;
         sp.open = open;
         sp.close = close;
@@ -900,14 +968,19 @@ bool DataBase::currencyPricesTable_init()
     q = "CREATE TABLE IF NOT EXISTS CurrencyPrices ("
         "ID	INTEGER UNIQUE,"
         "CurrencyID	INTEGER,"
+        //"Currency1ID	INTEGER,"
+        //"Currency2ID	INTEGER,"
         "TimeStamp	INTEGER NOT NULL,"
         "Open	DOUBLE,"
         "Close	DOUBLE,"
         "High	DOUBLE,"
         "Low	DOUBLE,"
         "FOREIGN KEY(CurrencyID) REFERENCES Currencies(ID),"
+        //"FOREIGN KEY(Currency1ID) REFERENCES Currencies(ID),"
+        //"FOREIGN KEY(Currency2ID) REFERENCES Currencies(ID),"
         "PRIMARY KEY(ID AUTOINCREMENT),"
-        "UNIQUE(CurrencyID,TimeStamp)"
+        //"UNIQUE(Currency1ID, Currency2ID, TimeStamp)"
+        "UNIQUE(CurrencyID TimeStamp)"
     ");";
     if(!qry.exec(q))
     {
@@ -1060,6 +1133,7 @@ bool DataBase::securityPricesTable_get(const int securityId,
     out_sp.volume.resize(rows);
 
     out_sp.security = sec;
+    out_sp.units_currencyId = -1; // native currency, no conversion was performed
     int i=0;
     while(qry.next())
     {
