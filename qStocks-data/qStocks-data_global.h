@@ -1,0 +1,12 @@
+#ifndef QSTOCKSDATA_GLOBAL_H
+#define QSTOCKSDATA_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(QSTOCKSDATA_LIBRARY)
+#  define QSTOCKSDATA_EXPORT Q_DECL_EXPORT
+#else
+#  define QSTOCKSDATA_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // QSTOCKSDATA_GLOBAL_H
