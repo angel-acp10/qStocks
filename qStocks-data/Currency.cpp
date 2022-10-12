@@ -1,4 +1,4 @@
-#include "currency.h"
+#include "Currency.h"
 
 Currency::Currency(const QString& name) :
     mId(-1),

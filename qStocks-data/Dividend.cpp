@@ -1,4 +1,4 @@
-#include "dividend.h"
+#include "Dividend.h"
 
 Dividend::Dividend(int timeStamp, int productId, double amount) :
     mId(-1),

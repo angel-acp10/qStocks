@@ -1,4 +1,4 @@
-#include "watchlist.h"
+#include "WatchList.h"
 
 WatchList::WatchList(const QString& name) :
     mId(-1),

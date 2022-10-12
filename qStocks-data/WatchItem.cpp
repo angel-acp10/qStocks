@@ -1,4 +1,4 @@
-#include "watchitem.h"
+#include "WatchItem.h"
 
 WatchItem::WatchItem(int productId, int watchListId) :
     mId(-1),

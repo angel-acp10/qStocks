@@ -1,4 +1,4 @@
-#include "product.h"
+#include "Product.h"
 
 Product::Product(const int typeId,
                    const QString& name,

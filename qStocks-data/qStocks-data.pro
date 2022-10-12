@@ -11,31 +11,33 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    api.cpp \
-    broker.cpp \
-    currency.cpp \
-    dividend.cpp \
-    price.cpp \
-    product.cpp \
-    producttype.cpp \
-    split.cpp \
-    transaction.cpp \
-    watchitem.cpp \
-    watchlist.cpp
+    Api.cpp \
+    ApiDao.cpp \
+    Broker.cpp \
+    Currency.cpp \
+    Dividend.cpp \
+    Price.cpp \
+    Product.cpp \
+    ProductType.cpp \
+    Split.cpp \
+    Transaction.cpp \
+    WatchItem.cpp \
+    WatchList.cpp
 
 HEADERS += \
-    api.h \
-    broker.h \
-    dividend.h \
-    price.h \
-    product.h \
-    producttype.h \
-    qStocks-data_global.h \
-    currency.h \
-    split.h \
-    transaction.h \
-    watchitem.h \
-    watchlist.h
+    Api.h \
+    ApiDao.h \
+    Broker.h \
+    Currency.h \
+    Dividend.h \
+    Price.h \
+    Product.h \
+    ProductType.h \
+    Split.h \
+    Transaction.h \
+    WatchItem.h \
+    WatchList.h \
+    qStocks-data_global.h
 
 # Default rules for deployment.
 !isEmpty(target.path): INSTALLS += target

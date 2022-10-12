@@ -1,4 +1,4 @@
-#include "producttype.h"
+#include "ProductType.h"
 
 ProductType::ProductType(const QString& name) :
     mId(-1),

@@ -1,4 +1,4 @@
-#include "split.h"
+#include "Split.h"
 
 Split::Split(int timeStamp, int productId, int numerator, int denominator) :
     mId(-1),

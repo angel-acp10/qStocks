@@ -1,4 +1,4 @@
-#include "broker.h"
+#include "Broker.h"
 
 Broker::Broker(const QString& name) :
     mId(-1),
