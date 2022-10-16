@@ -7,7 +7,7 @@
 class QSTOCKSDATA_EXPORT WatchItem
 {
 public:
-    explicit WatchItem(int productId, int watchListId);
+    explicit WatchItem(int productId = -1, int watchListId = -1);
 
     int id() const;
     void setId(int id);

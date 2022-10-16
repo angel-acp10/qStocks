@@ -7,10 +7,10 @@
 class QSTOCKSDATA_EXPORT Price
 {
 public:
-    explicit Price(int timeStamp, int productId,
-                   double open, double close,
-                   double high, double low,
-                   double volume=0);
+    explicit Price(int timeStamp = -1, int productId = -1,
+                   double open = -1, double close = -1,
+                   double high = -1, double low = -1,
+                   double volume = -1);
 
     int id() const;
     void setId(int id);

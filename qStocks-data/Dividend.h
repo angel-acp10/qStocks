@@ -7,7 +7,7 @@
 class QSTOCKSDATA_EXPORT Dividend
 {
 public:
-    explicit Dividend(int timeStamp, int productId, double amount);
+    explicit Dividend(int timeStamp = -1, int productId = -1, double amount = -1);
 
     int id() const;
     void setId(int id);

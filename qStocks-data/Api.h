@@ -7,7 +7,7 @@
 class QSTOCKSDATA_EXPORT Api
 {
 public:
-    explicit Api(const QString& name);
+    explicit Api(const QString& name = "");
 
     int id() const;
     void setId(int id);

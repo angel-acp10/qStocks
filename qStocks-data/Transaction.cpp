@@ -44,6 +44,15 @@ void Transaction::setProductId(int productId)
     mProductId = productId;
 }
 
+int Transaction::productTypeId() const
+{
+    return mProductTypeId;
+}
+void Transaction::setProductTypeId(int productTypeId)
+{
+    mProductTypeId = productTypeId;
+}
+
 double Transaction::quantity() const
 {
     return mQuantity;

@@ -7,7 +7,7 @@
 class QSTOCKSDATA_EXPORT ProductType
 {
 public:
-    explicit ProductType(const QString& name);
+    explicit ProductType(const QString& name = "");
 
     int id() const;
     void setId(int id);

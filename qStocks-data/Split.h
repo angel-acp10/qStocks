@@ -7,7 +7,8 @@
 class QSTOCKSDATA_EXPORT Split
 {
 public:
-    explicit Split(int timeStamp, int productId, int numerator, int denominator);
+    explicit Split(int timeStamp = -1, int productId = -1,
+                   int numerator = -1, int denominator = -1);
 
     int id() const;
     void setId(int id);

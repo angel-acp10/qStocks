@@ -7,9 +7,9 @@
 class QSTOCKSDATA_EXPORT Transaction
 {
 public:
-    explicit Transaction(int timeStamp, int productId, int productTypeId,
-                         double quantity, double localUnitPrice, double value,
-                         double comissions, int currencyId, int brokerId);
+    explicit Transaction(int timeStamp = -1, int productId = -1, int productTypeId = -1,
+                         double quantity = 0, double localUnitPrice = 0, double value = 0,
+                         double comissions = 0, int currencyId = -1, int brokerId = -1);
 
     int id() const;
     void setId(int id);

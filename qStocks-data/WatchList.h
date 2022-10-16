@@ -7,7 +7,7 @@
 class QSTOCKSDATA_EXPORT WatchList
 {
 public:
-    explicit WatchList(const QString& name);
+    explicit WatchList(const QString& name = "");
 
     int id() const;
     void setId(int id);

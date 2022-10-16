@@ -14,29 +14,51 @@ SOURCES += \
     Api.cpp \
     ApiDao.cpp \
     Broker.cpp \
+    BrokerDao.cpp \
     Currency.cpp \
+    CurrencyDao.cpp \
+    DatabaseManager.cpp \
     Dividend.cpp \
+    DividendDao.cpp \
     Price.cpp \
+    PriceDao.cpp \
     Product.cpp \
+    ProductDao.cpp \
     ProductType.cpp \
+    ProductTypeDao.cpp \
     Split.cpp \
+    SplitDao.cpp \
     Transaction.cpp \
+    TransactionDao.cpp \
     WatchItem.cpp \
-    WatchList.cpp
+    WatchItemDao.cpp \
+    WatchList.cpp \
+    WatchListDao.cpp
 
 HEADERS += \
     Api.h \
     ApiDao.h \
     Broker.h \
+    BrokerDao.h \
     Currency.h \
+    CurrencyDao.h \
+    DatabaseManager.h \
     Dividend.h \
+    DividendDao.h \
     Price.h \
+    PriceDao.h \
     Product.h \
+    ProductDao.h \
     ProductType.h \
+    ProductTypeDao.h \
     Split.h \
+    SplitDao.h \
     Transaction.h \
+    TransactionDao.h \
     WatchItem.h \
+    WatchItemDao.h \
     WatchList.h \
+    WatchListDao.h \
     qStocks-data_global.h
 
 # Default rules for deployment.

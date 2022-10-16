@@ -7,9 +7,9 @@
 class QSTOCKSDATA_EXPORT Product
 {
 public:
-    explicit Product(const int typeId,
-                      const QString& name,
-                      int currencyId);
+    explicit Product(const int typeId = -1,
+                      const QString& name = "",
+                      int currencyId = -1);
 
     int id() const;
     void setId(int id);

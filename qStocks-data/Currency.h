@@ -7,7 +7,7 @@
 class QSTOCKSDATA_EXPORT Currency
 {
 public:
-    explicit Currency(const QString& name);
+    explicit Currency(const QString& name = "");
 
     int id() const;
     void setId(int id);

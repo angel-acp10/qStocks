@@ -7,7 +7,7 @@
 class QSTOCKSDATA_EXPORT Broker
 {
 public:
-    explicit Broker(const QString& name);
+    explicit Broker(const QString& name = "");
 
     int id() const;
     void setId(int id);
